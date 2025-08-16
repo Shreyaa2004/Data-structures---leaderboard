@@ -19,4 +19,11 @@ I think during this project I will face challenges such as having no memory leak
 Why should you find it interesting?
 Leaderboards, although a common function, are very useful to see ranks as you are playing games. Skip lifts help attain this function with efficient performance time and is a more simpler way than binary search trees. 
 
+How to run?
+First open the terminal using - cd ~/Data-structures---leaderboard
+Then compile the project with - g++ -std=c++17 -o leaderboard Leaderboard.cpp SkipList.cpp
+Then run it with - ./leaderboard
 
+Each Node in the skip list stores a Player and multiple next pointers that allow the list to “skip” over nodes for faster search, insertion, and deletion.
+
+When you insert, remove, or look up a player, the skip list’s multi-level structure is used to quickly find the right position instead of scanning the whole list.
