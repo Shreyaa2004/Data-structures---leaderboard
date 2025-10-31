@@ -1,4 +1,3 @@
-
 #include "SkipList.h"
 #include <iostream>
 #include <cstdlib>
@@ -8,7 +7,7 @@ SkipList::SkipList(int maxLvl, float p)
     : maxLevel(maxLvl), probability(p), size(0)
 {
     head = new Node(Player{"", -1}, maxLevel); 
-    srand(static_cast<unsigned>(time(0)));    
+    srand(time(NULL));
 }
 
 SkipList::~SkipList() {
@@ -17,54 +16,60 @@ SkipList::~SkipList() {
 }
 
 void SkipList::clear() {
-    Node* current = head->next[0];
-    while (current) {
-        Node* next = current->next[0];
-        delete current;
-        current = next;
+    Node* curr = head->next[0];
+    while (curr != nullptr) {
+        Node* temp = curr->next[0];
+        delete curr;
+        curr = temp;
     }
-    for (int i = 0; i < maxLevel; ++i) {
+    
+    for (int i = 0; i < maxLevel; i++) {
         head->next[i] = nullptr;
     }
     size = 0;
 }
 
 int SkipList::randomLevel() {
-    int lvl = 1;
-    while (((float)rand() / RAND_MAX) < probability && lvl < maxLevel) {
-        lvl++;
+    int level = 1;
+    while ((rand() / (float)RAND_MAX) < probability && level < maxLevel) {
+        level++;
     }
-    return lvl;
+    return level;
 }
 
 SkipList::Node* SkipList::findNode(std::string name) {
-    Node* current = head->next[0];
-    while (current) {
-        if (current->data.name == name)
-            return current;
-        current = current->next[0];
+    Node* curr = head->next[0];
+    while (curr != nullptr) {
+        if (curr->data.name == name) {
+            return curr;
+        }
+        curr = curr->next[0];
     }
     return nullptr;
 }
 
 void SkipList::insert(std::string name, int score) {
+    // remove old entry if exists
     remove(name);
 
     std::vector<Node*> update(maxLevel, nullptr);
-    Node* current = head;
-    Player newPlayer{name, score};
+    Node* curr = head;
+    Player p = {name, score};
 
-    for (int lvl = maxLevel - 1; lvl >= 0; --lvl) {
-        while (current->next[lvl] && higherScoreFirst(current->next[lvl]->data, newPlayer)) {
-            current = current->next[lvl];
+    // find insert position at each level
+    for (int level = maxLevel - 1; level >= 0; level--) {
+        while (curr->next[level] != nullptr && 
+               higherScoreFirst(curr->next[level]->data, p)) {
+            curr = curr->next[level];
         }
-        update[lvl] = current;
+        update[level] = curr;
     }
 
-    int nodeLvl = randomLevel();
-    Node* newNode = new Node(newPlayer, nodeLvl);
+    int newLevel = randomLevel();
+    Node* newNode = new Node(p, newLevel);
 
-    for (int i = 0; i < nodeLvl; ++i) {
+    // insert node at each level
+    for (int i = 0; i < newLevel; i++) {
         newNode->next[i] = update[i]->next[i];
         update[i]->next[i] = newNode;
     }
@@ -74,86 +79,96 @@ void SkipList::insert(std::string name, int score) {
 
 bool SkipList::remove(std::string name) {
     std::vector<Node*> update(maxLevel, nullptr);
-    Node* current = head;
+    Node* curr = head;
 
-    for (int lvl = maxLevel - 1; lvl >= 0; --lvl) {
-        while (current->next[lvl] && current->next[lvl]->data.name != name) {
-            current = current->next[lvl];
+    // find node to remove
+    for (int level = maxLevel - 1; level >= 0; level--) {
+        while (curr->next[level] != nullptr && 
+               curr->next[level]->data.name != name) {
+            curr = curr->next[level];
         }
-        update[lvl] = current;
+        update[level] = curr;
     }
 
-    Node* target = update[0]->next[0];
-    if (!target || target->data.name != name)
+    Node* toDelete = update[0]->next[0];
+    if (toDelete == nullptr || toDelete->data.name != name) {
         return false;
-
-    int nodeLvl = target->next.size();
-    for (int i = 0; i < nodeLvl; ++i) {
-        if (update[i]->next[i] == target)
-            update[i]->next[i] = target->next[i];
     }
 
-    delete target;
+    // remove from each level
+    int levels = toDelete->next.size();
+    for (int i = 0; i < levels; i++) {
+        if (update[i]->next[i] == toDelete) {
+            update[i]->next[i] = toDelete->next[i];
+        }
+    }
+
+    delete toDelete;
     size--;
     return true;
 }
 
 int SkipList::getScore(std::string name) {
-    Node* node = findNode(name);
-    if (node) return node->data.score;
-    return -1;
+    Node* n = findNode(name);
+    return (n != nullptr) ? n->data.score : -1;
 }
 
 int SkipList::getRank(std::string name) {
-    int rank = 0;
-    Node* current = head->next[0];
-    while (current) {
-        if (current->data.name == name)
-            return rank;
-        rank++;
-        current = current->next[0];
+    Node* curr = head->next[0];
+    int position = 0;
+    
+    while (curr != nullptr) {
+        if (curr->data.name == name) {
+            return position;
+        }
+        position++;
+        curr = curr->next[0];
     }
     return -1;
 }
 
 void SkipList::printTopN(int n) {
-    Node* current = head->next[0];
-    int count = 0;
-    while (current && count < n) {
-        std::cout << count << ") " << current->data.name << " : " << current->data.score << "\n";
-        current = current->next[0];
-        count++;
+    Node* curr = head->next[0];
+    int idx = 0;
+    while (curr != nullptr && idx < n) {
+        std::cout << idx << ") " << curr->data.name 
+                  << " : " << curr->data.score << "\n";
+        curr = curr->next[0];
+        idx++;
     }
 }
 
 void SkipList::printAll() {
-    Node* current = head->next[0];
-    int count = 0;
-    while (current) {
-        std::cout << count << ") " << current->data.name << " : " << current->data.score << "\n";
-        current = current->next[0];
-        count++;
+    Node* curr = head->next[0];
+    int idx = 0;
+    while (curr != nullptr) {
+        std::cout << idx << ") " << curr->data.name 
+                  << " : " << curr->data.score << "\n";
+        curr = curr->next[0];
+        idx++;
     }
 }
 
 std::vector<Player> SkipList::topN(int n) {
-    std::vector<Player> result;
-    Node* current = head->next[0];
+    std::vector<Player> results;
+    Node* curr = head->next[0];
     int count = 0;
-    while (current && count < n) {
-        result.push_back(current->data);
-        current = current->next[0];
+    
+    while (curr != nullptr && count < n) {
+        results.push_back(curr->data);
+        curr = curr->next[0];
         count++;
     }
-    return result;
+    return results;
 }
 
 std::vector<Player> SkipList::all() {
-    std::vector<Player> result;
-    Node* current = head->next[0];
-    while (current) {
-        result.push_back(current->data);
-        current = current->next[0];
+    std::vector<Player> results;
+    Node* curr = head->next[0];
+    
+    while (curr != nullptr) {
+        results.push_back(curr->data);
+        curr = curr->next[0];
     }
-    return result;
+    return results;
 }

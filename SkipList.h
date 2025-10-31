@@ -1,5 +1,6 @@
 #ifndef SKIPLIST_H
 #define SKIPLIST_H
+
 #include <string>
 #include <vector>
 #include <iostream>
@@ -11,10 +12,10 @@ struct Player {
     int score;
 };
 
+// comparison function for sorting by score
 inline bool higherScoreFirst(const Player& a, const Player& b) {
-    if (a.score != b.score) {
+    if (a.score != b.score)
         return a.score > b.score;
-    }
     return a.name < b.name;
 }
 
@@ -42,12 +43,12 @@ private:
     Node* head;        
     int maxLevel;      
     float probability; 
-    int size;          
+    int size;
+    std::vector<Player> players;          
 
     int randomLevel();            
     Node* findNode(std::string);  
-    void clear();
-    std::vector<Player> players;                  
+    void clear();                  
 };
 
-#endif 
+#endif

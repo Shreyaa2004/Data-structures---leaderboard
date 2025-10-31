@@ -1,3 +1,4 @@
+main.cpp << 'EOF'
 #include "SkipList.h"
 #include <iostream>
 #include <string>
